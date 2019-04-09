@@ -1,0 +1,1021 @@
+\documentclass{article}
+
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{xypic}
+\usepackage[left=3cm,right=3cm,bottom=3.2cm,top=3cm]{geometry}
+\usepackage{pifont}
+\usepackage{mdframed}
+\usepackage{url}
+
+\def\mystrut{\rule{0pt}{0.68em}}
+\newcommand{\act}[1]{\textsf{#1}}
+\newcommand{\da}[1]{\overline{\mystrut\textsf{#1}}}
+\newcommand{\defn}{\stackrel{\text{def}}{=}}
+
+\newcommand{\dak}[1]{\overline{\textsf{#1}}}
+
+\newcommand{\op}[2]{\act{r}(#1).\dak{w}(#1 #2)}
+\newcommand{\pEnd}{\mathbf{0}}
+
+
+\newcommand{\highlight}[1]{%
+  \colorbox{yellow!50}{$\displaystyle#1$}}
+\newcommand{\highlightG}[1]{%
+  \colorbox{blue!30}{$\displaystyle#1$}}
+\newcommand{\highlightR}[1]{%
+  \colorbox{red!25}{$\displaystyle#1$}}
+\newcommand{\highlightGH}[1]{%
+  \colorbox{blue!5}{$\displaystyle#1$}}
+
+\newcommand{\exampleLabel}{\tag{\small{\textcolor{blue}{\textsf{example}}}}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{theorem}{Theorem}
+
+\newcommand{\src}[1]{\highlightR{#1}}
+\newcommand{\trg}[1]{\highlight{#1}}
+\newcommand{\srch}[1]{\highlightG{#1}}
+\newcommand{\trgh}[1]{\highlightGH{#1}}
+\newcommand{\subd}[1]{\highlight{#1}}
+
+\newcommand{\dual}[1]{\overline{#1}}
+
+\newcommand{\restr}[2]{\nu #2 . #1}
+
+\title{\vspace{-3.5em}CO661 - Theory and Practice of Concurrency \\
+{\Large{Notes on the Calculus of Communicating Systems (CCS)}}}
+
+\date{\vspace{-2em}Last updated on \today}
+
+\definecolor{labelColor}{RGB}{201,46,124}
+\newcommand{\trule}[1]{\textcolor{labelColor}{\textit{\textsf{#1}}}\;}
+
+\begin{document}
+\maketitle{}
+\vspace{-1em}
+
+\noindent
+In this module, we examine both the theory and practice of
+concurrency. The theoretical side brings rigour to our reasoning and
+understanding of key concepts in concurrent programming. In this
+module, we utilise CCS, the Calculus of Communicating
+Systems,\footnote{Robin Milner: \emph{A Calculus of Communicating
+    Systems}, Springer Verlag, ISBN 0-387-10235-3. 1980.} as a model
+for understanding concurrency. CCS is essentially a small programming
+language (a ``\emph{calculus}'') which is carefully and formally
+defined.  This allows us to be precise about the meaning of concurrent
+programs. CCS is often described as a \emph{process calculus} or
+\emph{process algebra} since it is a calculus where ``processes'' are
+the central unit of organisation: its programs are processes,
+which are made up of further processes.
+
+These notes are open source.\footnote{\url{https://github.com/dorchard/co661-notes.git}} If you spot any
+mistakes or errors or things that need clarifying, please fork and
+send a pull request.
+
+\tableofcontents
+
+\section{Syntax}
+
+CCS processes comprise \emph{actions}, which we use to abstract
+the notion of a \emph{command} in a program or a particular function
+call or message. For example, the following CCS program describes a process
+that performs an (abstract) action $a$ followed by an (abstract)
+action $b$ and then does nothing:
+%
+\begin{equation*}
+  a . b . \mathbf{0}
+\end{equation*}
+%
+Actions sequenced via the operator ``.'' which is called the
+\emph{prefixing operator} since it is used to prefix a process
+with an action. The process $\mathbf{0}$ is the inactive process.
+
+The full syntax of CCS is defined inductively by the following BNF grammar:
+%
+\begin{align*}
+  \begin{array}{rll}
+  P, Q ::= \;\, & \alpha . P & \qquad \textit{prefixing} \\
+    \;\,\mid & P + Q & \qquad \textit{non-deterministic choice}  \\
+    \;\,\mid &  (P \, | \, Q) & \qquad \textit{parallel composition} \\
+    \;\,\mid & \nu a . P & \qquad \textit{name restriction} \\
+    \;\,\mid & \mathbf{0} & \qquad \textit{inactive process} \\
+    \;\,\mid & P[b/a] & \qquad \textit{relabelling} \\
+    \;\,\mid & A & \qquad \textit{process identifiers}
+  \end{array}
+\end{align*}
+%
+where  $\alpha ::= a \,\mid\, b \,\mid\, \ldots \overline{a} \,\mid\,
+\overline{b} \,\mid\, \ldots$
+ranges over \emph{names} (of actions)
+where names with an overline are called \emph{co-names} (or \emph{dual
+  names}). We use $P$ and $Q$ to range over processes, i.e., when
+we want to refer to some process in an abstract sense. We use
+$A$ to range over identifiers for processes (i.e., concrete names
+given to processes, see below on ``Process definitions'').
+
+The following gives a few examples to give some intuition, but in the
+next section we will look at the concrete semantics of proceses
+which will make precise what each part of the syntax means.
+%
+\begin{itemize}
+  \item $a. b. P$ -- does action $a$ then action $b$ then continues to
+  %
+  behave as the process $P$;
+  \item $a.0 + b.0$ -- chooses non-deterministically between doing
+  action $a$ or doing action $b$.
+  %
+  \item $(a.b.0 \mid c.d.0)$ -- in parallel, one process does action $a$
+  then $b$ then stops (inactive process), whilst the other does $c$
+  then $d$ then stops. What is observed is an \emph{interleaving} of
+  these actions, e.g., one possibility is that whole process does
+  $a$ then $c$ then $b$ then $d$. Another possibility is $c$ then $d$
+  then $a$ then $b$. The point is that we may get any interleaving of
+  the actions of the subprocesses.
+  %
+  \item $\nu a . (a . P \mid \overline{a} . Q)$ -- this is a process
+  where no $a$ action can be observed externally, because of the name
+  restriction $\nu a $. The inner process $(a . P \mid \overline{a}
+  . Q)$ can do a \emph{handshake} between the action $a$ and its dual
+  $\overline{a}$ which can happen together leaving a process $P \mid Q$.
+\end{itemize}
+%
+\paragraph{Concurrency Workbench}
+Note that the Concurrency Workbench tool (CAAL), which we use
+in this course, has a slightly different
+concrete syntax, with the above constructs represented as follows (in order):
+%
+\begin{align*}
+P ::= \;\ \texttt{a} . P \;\,\mid\;\, \texttt{'a} .P \;\,\mid\;\, P \texttt{+} Q \;\,\mid\;\, (P \texttt{|} Q)
+\;\,\mid\;\, P \, \texttt{$\backslash\{$}\texttt{a1}, \ldots, \texttt{an}\texttt{$\}$}
+\;\,\mid\;\, \texttt{0} \;\,\mid\;\, P\texttt{[b/a]} \;\,\mid\;\, A
+\end{align*}
+
+\paragraph{Process definitions}
+
+We will defined processes by recursive definitions. For example, the
+following defines a process named $A$:
+%
+\begin{equation*}
+A \; {\mathrel{\mathop{=}\limits^{{def}}}} \; a.b.A
+\end{equation*}
+%
+The process is recursively defined, and performs actions $a$ then $b$ 
+continuously.
+
+Processes can be mutually recursive. For example, we could
+define a process that performs $a$ then $b$ actions
+continuously via two definitions:
+%
+\begin{equation*}
+  A \; {\mathrel{\mathop{=}\limits^{{def}}}} \; a.B
+  \qquad\qquad
+  B \; {\mathrel{\mathop{=}\limits^{{def}}}} \; b.A
+\end{equation*}
+%
+Here $A$ performs $a$ then $b$ actions
+continuously whilst $B$ performs $b$ then $a$ actions
+continuously (they have different starting points).
+
+\vspace{-1em}
+\section{Semantics}
+
+We describe the semantics (the meaning) of CCS processes via a
+\emph{labelled-transitions system} which effectively describes small
+``steps'' of evaluation for CCS processes along with actions which are
+made observable by this evaluation.  We define these small steps
+(called \emph{reductions} or \emph{transitions})
+by a relation between processes,\footnote{Viewed set theoretically,
+  $\rightarrow$ is a ternary relation, i.e.
+  $(\rightarrow) \subset P \times l \times P$.}  annotated with a
+label, of the form:
+%
+\begin{equation*}
+P \xrightarrow{l} Q
+\end{equation*}
+%
+which describes that a process $P$ can reduce (\emph{evaluate}) to a
+process $Q$ by doing some action described by the label $l$.
+This is a \emph{labelled transition}.
+Labels are as defined as:
+$$l ::= \alpha \,\mid\, \tau$$
+i.e., they are
+either names of actions or they are a special label $\tau$ called a
+\emph{silent action}.
+
+Since the syntax of processes is itself inductively defined (i.e.
+processes can contain processes) so the definition of $\rightarrow$ is
+inductively defined. We leverage the \emph{inference rule} style, with
+inductive rules having one or more premises and axiom rules with no
+premises. Each piece of syntax has at least one corresponding rule for
+$\rightarrow$, giving the semantics of each syntactic construct. 
+
+\paragraph{Actions}
+
+The first simple reduction rule is for action prefixes:
+%
+\begin{align*}
+  \trule{action}\dfrac{}{\alpha.P \xrightarrow{\alpha} P}
+\end{align*}
+%
+We see that a process with an action $a$ prefixing another process $P$ can reduce by
+emitting that action and then becoming the remaining processes $P$.
+e.g.
+%
+\begin{align*}
+  \exampleLabel{}
+  \trule{action}\dfrac{}{a.b.\mathbf{0} \xrightarrow{a} b.\mathbf{0}}
+\end{align*}
+%
+\begin{definition}[Trace]
+  Labelled transitions can be composed together to form a
+  \emph{trace},
+  which comprises a sequence of reductions steps, e.g.,
+  %
+  \begin{equation*}
+    a.b.\mathbf{0} \; \xrightarrow{a} \; b.\mathbf{0} \; \xrightarrow{b} \;\mathbf{0}
+  \end{equation*}
+  %
+  Each step here is a reduction that needs a \emph{derivation}. We
+  will see below that we can derive reductions for more complex
+  processes by plugging together inference rules.
+\end{definition}
+
+\paragraph{Parallel composition}
+A parallel composition of processes $P \mid Q$ has two possible
+reductions given by the following inductive rules:
+%
+\begin{align*}
+  \trule{par1}{\dfrac{P \xrightarrow{l} P'}{P \mid Q \xrightarrow{l} P' \mid Q}}
+\qquad
+\trule{par2}{\dfrac{Q \xrightarrow{l} Q'}{P \mid Q \xrightarrow{l} P \mid Q'}}
+\end{align*}
+%
+The \trule{par1} rule says that if we have a process $P$ that
+can reduce to $P'$ with label $l$ then we can place $P$ in parallel
+with $Q$ (i.e., $P \mid Q$) and reduce to $P' \mid Q$ with label $l$.
+Essentially we are allowing a process within a parallel composition
+to make some progress. The \trule{par2} provides the symmetric case.
+
+\begin{example}
+We can compose the \trule{action} and \trule{par1}
+rules to get the following derivation of a single reduction
+step for the process $a . P \mid b . Q$:
+%
+\begin{align*}
+  \exampleLabel{}
+  \trule{par1}\dfrac{\trule{action}
+  \dfrac{}{a.P \xrightarrow{a} P}}{a.P \mid b.Q \xrightarrow{a} P \mid b.Q}
+\end{align*}
+%
+Thus, we have reduced on the left-hand side of the parallel
+composition, emitting an $a$ action to get the resulting process $P
+\mid b . Q$. This process could then reduce by applying \trule{par2}:
+%
+\begin{align*}
+  \exampleLabel{}
+  \trule{par2}\dfrac{\trule{action}
+   \dfrac{}{b.Q \xrightarrow{b} Q}}{P \mid b.Q \xrightarrow{a} P \mid Q}
+\end{align*}
+%
+These two reduction steps, once derived, can be put together to form
+the following trace:
+%
+\begin{equation*}
+a.P \mid b.Q \xrightarrow{a} P \mid b.Q \xrightarrow{b} P \mid Q
+\end{equation*}
+%
+This is not the only possible reduction sequence for
+the process $(a.P \mid b.Q)$. Another possibility is that we could
+reduce on the right first, then on the left, giving the trace:
+%
+\begin{equation*}
+a.P \mid b.Q \xrightarrow{b} a.P \mid Q \xrightarrow{a} P \mid Q
+\end{equation*}
+%
+We can put these two traces together into a \emph{transition graph} that shows
+the possible traces:
+%
+\begin{equation*}
+  \xymatrix{
+    a.P \mid b.Q \ar[r]^{a} \ar[d]_-{b} & P \mid b.Q \ar[d]^-{a} \\
+    a.P \mid Q \ar[r]_{a} & P \mid Q
+    }
+\end{equation*}
+%
+Note that this represents a \emph{confluent} reduction, i.e., we take
+different paths in the reduction but end in the same place.
+\end{example}
+
+A further reduction is possible for a parallel composition of processes,
+but in a restricted setting where two parallel processes reduce
+by dual actions:
+%
+\begin{align*}
+  \trule{handshake}\dfrac{P \xrightarrow{a} P' \qquad Q \xrightarrow{\overline{a}} Q'}
+  {P \mid Q \xrightarrow{\tau} P' \mid Q'}
+\end{align*}
+%
+In this case we have the processes $P$ and $Q$ making a reduction step
+\emph{at the same time} to become $P' \mid Q'$ if they reduce by dual
+actions $a$ and $\overline{a}$. We can use this to model notions of
+synchronisation, co-ordination, or communication between processes.
+
+\begin{example}
+  Consider the following processes representing a vending machine
+  $V$ and a customer $C$:
+  %
+  \begin{align*}
+V  & {\mathrel{\mathop{=}\limits^{{def}}}} 
+     {\mathsf{coin}}.\overline{\mathsf{tea}}.V \\
+C & {\mathrel{\mathop{=}\limits^{{def}}}} 
+\overline{\mathsf{coin}}.{\mathsf{tea}}.C   
+  \end{align*}
+  %
+  Since $V$ can reduce by emitting the action $\mathsf{coin}$ and
+  $C$ can reduce by emitting the action $\overline{\mathsf{coin}}$
+   we can get the reduction:
+  %
+  \begin{align*}
+    \exampleLabel{}
+    \trule{handshake}
+    \dfrac{V \xrightarrow{\mathsf{coin}} \overline{\mathsf{tea}}.V
+    \qquad
+    C \xrightarrow{\overline{\mathsf{coin}}} \overline{tea}.C}
+    {V \mid C \xrightarrow{\tau} (\overline{\mathsf{tea}}.V \mid \mathsf{tea}.C)}
+  \end{align*}
+  %
+  Note that the resulting process can further do a handshake because
+  of the dual $\mathsf{tea}$ actions, bringing us back to the process
+  $V \mid C$.
+\end{example}
+
+\paragraph{Choice}
+A non-deterministic choice between two processes $P + Q$ reduces
+by reducing just one side, resulting in a process that corresponds
+to just one side of the choice, given by the rules:
+%
+\begin{align*}
+\trule{choice1}\dfrac{P_1 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q}
+\qquad
+\trule{choice2}\dfrac{P_2 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q} 
+\end{align*}
+%
+\begin{example} For a process $b.P + c.Q$, the top-level syntactic
+  construct is non-deterministic choice, so a reduction must necessarily
+   use \trule{choice1} or \trule{choice2}. For example:
+  \begin{align*}
+    \exampleLabel{}
+\trule{choice2}
+  \dfrac{\trule{action}\dfrac{}{c . Q \; \xrightarrow{c} \; Q}}
+        {b . P + c.Q \; \xrightarrow{c} \; Q}
+\end{align*}
+\end{example}
+%
+\noindent
+Note that when we make a choice, we lose the other branch--- above,
+$b.P$ disappears in the resulting process term. The lectures have more examples.
+
+\paragraph{Restriction}
+
+The notion of restricting a name for a process, i.e. $\nu a . P$
+can be thought of a bit like binding a name $a$ in the scope of $P$
+so that the name is ``local'' to $P$ and cannot be observed outside of
+it. Its semantics is given by:
+%
+\begin{align*}
+  \trule{restriction}\dfrac{P \xrightarrow{l} P'}
+{\nu a . P \xrightarrow{l} \nu a . P'} {l \neq a \wedge l \neq \overline{a}}
+\end{align*}
+%
+Here we are saying that we can observe the action given
+by label $l$ only if it is not the bound name $a$ or its dual
+$\overline{a}$. We can use this to enforce handshaking
+of dual actions.
+
+\begin{example}
+  Consider the processes $a . P$ and $\overline{a} . Q$.
+  Their parallel composition has three possible traces:
+  %
+  \begin{align*}
+    & (a . P \mid \overline{a} . Q) \xrightarrow{a}
+    (P \mid \overline{a} . Q) \xrightarrow{\overline{a}}
+    (P \mid Q) \\
+    & (a . P \mid \overline{a} . Q) \xrightarrow{\overline{a}}
+    (a.P \mid Q) \xrightarrow{a}
+      (P \mid Q) \\
+    & (a . P \mid \overline{a} . Q) \xrightarrow{\tau}
+      (P \mid Q)
+   \end{align*}
+   %
+   By restricting the process on action $a$ (i.e., the process term
+   $\nu a . (a . P \mid \overline{a} . Q)$) we can make sure that the
+   handshaking trace is the only one possible, preventing the other two traces, with
+   the derivation:
+   %
+   \begin{align*}
+          \exampleLabel{}
+     \trule{restriction}\dfrac{
+     \trule{handshake}
+     \dfrac{
+       \trule{action}\dfrac{}{a . P \xrightarrow{a} P}
+       \quad
+       \trule{action}\dfrac{}{\overline{a} . Q \xrightarrow{\overline{a}} Q}
+     }{(a . P \mid \overline{a} . Q) \xrightarrow{\tau} P \mid Q}
+     }{\nu a . (a . P \mid \overline{a} . Q) \xrightarrow{\tau} \nu a
+     . (P \mid Q)}
+   \end{align*}
+   %
+   The side condition for \trule{restriction} is satisfied since
+   $a \neq \tau$ and $\dual{a} \neq \tau$. No other derivation is
+   possible. For example, the following is not a valid derivation
+   because it would violate the side condition of \trule{restriction}
+   (that the label does not match the name being restricted over):
+   %
+   \begin{align*}
+     \exampleLabel{}
+     {\Large{{\textcolor{red}{\text{\ding{55}}}}}} \qquad
+     \trule{restriction}\dfrac{
+     \trule{par}
+     \dfrac{
+       \trule{action}\dfrac{}{a . P \xrightarrow{a} P}
+      }{(a . P \mid \overline{a} . Q) \xrightarrow{a} (P \mid
+  \overline{a} . Q)}
+     }{\nu a . (a . P \mid \overline{a} . Q) \xrightarrow{a} \nu a
+     . (P \mid \dual{a} . Q)}
+   \end{align*}
+   %
+\end{example}
+%
+We can encapsulate the above notion via a theorem:
+%
+\begin{theorem}\label{thm:forcing-handshaking}
+  Restriction of a name forces handshaking on dual names.
+  That is:
+  %
+    \begin{align*}
+      \forall P, P', Q, Q', a . \qquad &
+    P \xrightarrow{a} P' \wedge
+   Q \xrightarrow{\dual{a}} Q' \; \wedge
+      P \neq P' \wedge Q \neq Q' \\
+    \Leftrightarrow \;\;\; &
+\nu a . P \mid Q \, \xrightarrow{\tau} \, \nu a . P' \mid Q'
+    \end{align*}
+  %
+    That is, if two process can reduce by emitting dual names $a$ and
+    $\dual{a}$, then their parallel composition under a restriction of
+    $a$ can only reduce by a handshake, and vice versa.\footnote{
+      The lecture stated this slightly differently with:
+  \begin{align*}
+    \forall P, P', Q, Q', a . \qquad &
+    P \mid Q \; \xrightarrow{a} \; P' \mid Q \;
+    \xrightarrow{\overline{a}} \; P' \mid Q' \\[-0.4em]
+   \vee \;\;\;  & P  \mid Q \; \xrightarrow{\overline{a}} \; P \mid Q'
+      \; \xrightarrow{{a}} \; P' \mid Q' \\
+    \Leftrightarrow \;\;\; &
+\nu a . P \mid Q \, \xrightarrow{\tau} \, \nu a . P' \mid Q'
+  \end{align*}
+This is essentially the same as the theorem here, but more complex
+than necessary. Note that we also make it clear here that
+$P$ and $P'$ must be distinct in order to get the bi-implication.}
+\end{theorem}
+%
+Finally, a common syntactic shorthand for a several name restrictions is to
+give a comma-separated list of the restricted names, e.g.
+$\nu a . \nu b . P$ is written as $\nu a, b . P$.
+
+\paragraph{Process identifiers}
+
+A process identifier $A$ can reduce given a definition for
+$A$ which itself can reduce. This is given by the rule:
+%
+\begin{align*}
+\trule{def}
+\dfrac{P \xrightarrow{l} Q}
+      {A \xrightarrow{l} Q} \;\; (A {\mathrel{\mathop{=}\limits^{\textit{def}}}} P)
+\end{align*}
+%
+\begin{example}
+For example, if we have $\mathit{A} \defn{} a.b.A$ then we get
+the derivation:
+\begin{align*}
+  \exampleLabel{}
+  \trule{def}\dfrac{\trule{action}\dfrac{}{a.b.A \xrightarrow{a} b.A}}
+                  {A \xrightarrow{a} b.A}
+\end{align*}
+\end{example}
+
+\paragraph{Relabelling}
+
+Relabelling give us a way to rename an emitted action.
+That is $P [b/a]$ means that for process $P$, any emitted action $a$
+is renamed to the action $b$. The semantics is given by
+the reduction:
+%
+\begin{align*}
+  \trule{relabel}
+\dfrac{P \xrightarrow{l} Q}
+  {P[b/a] \xrightarrow{l[b/a]} P[b/a]}
+\end{align*}
+%
+where relabelling $l[b/a]$ means to relabel name $a$ to $b$ for the label $l$, defined:
+%
+\begin{align*}
+l[b/a] = \begin{cases}
+b & \textit{when} \;l = a \\
+\overline{b} & \textit{when} \; l = \overline{a} \\
+l & \textit{otherwise}
+\end{cases}
+\end{align*}
+%
+Relabelling is useful when reusing definitions for different purposes
+(abstraction and reuse), but we do not make frequent use of it in the course.
+
+\subsection{Collected rules}
+
+\begin{mdframed}
+\begin{center}
+\begin{align*}
+\begin{array}{c}
+\trule{action}\dfrac{}{\alpha.P \xrightarrow{\alpha} P} \\[2em]
+%
+\trule{par1}{\dfrac{P \xrightarrow{l} P'}{P \mid Q \xrightarrow{l} P' \mid Q}}
+\qquad
+\trule{par2}{\dfrac{Q \xrightarrow{l} Q'}{P \mid Q \xrightarrow{l} P \mid Q'}} \\[2em]
+\trule{handshake}\dfrac{P \xrightarrow{a} P' \qquad Q \xrightarrow{\overline{a}} Q'}
+{P \mid Q \xrightarrow{\tau} P' \mid Q'}
+\qquad
+\trule{restriction}\dfrac{P \xrightarrow{l} P'}
+{\nu a . P \xrightarrow{l} \nu a . P'} {l \neq a \wedge l \neq \overline{a}} \\[2em]
+\trule{choice1}\dfrac{P_1 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q}
+\qquad
+\trule{choice2}\dfrac{P_2 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q} \\[2em]
+\trule{def}
+\dfrac{P \xrightarrow{l} Q}
+      {A \xrightarrow{l} Q} \;\; (A {\mathrel{\mathop{=}\limits^{\textit{def}}}} P)
+\qquad
+\trule{relabel}
+\dfrac{P \xrightarrow{l} Q}
+      {P[b/a] \xrightarrow{l[b/a]} P[b/a]}
+\end{array} \\
+\end{align*}
+where relabelling $l[b/a]$ means to relabel name $a$ to $b$ for the label $l$, defined:
+%
+\begin{align*}
+l[b/a] = \begin{cases}
+b & \textit{when} \;l = a \\
+\overline{b} & \textit{when} \; l = \overline{a} \\
+l & \textit{otherwise}
+\end{cases}
+\end{align*}
+\end{center}
+\end{mdframed}
+
+\begin{example}
+  Here is an extended example of a 
+  derivation of one possible reduction for the process
+defined $A \stackrel{\textit{def}}{=} a . \mathbf{0} \mid (b . P + c.Q)$:
+%
+\begin{align*}
+  \exampleLabel{}
+  \trule{def}
+  \dfrac{
+\trule{par2}
+\dfrac{
+\trule{choice2}
+\dfrac{\trule{action}\dfrac{}{c . Q \; \xrightarrow{c} \; Q}}
+{b . P + c.Q \; \xrightarrow{c} \; Q}}
+{a . \mathbf{0} \mid (b . P + c.Q) \; \xrightarrow{c} \; a.\mathbf{0}
+  \mid Q}
+  }
+  {A \; \xrightarrow{c} \; a.\mathbf{0} \mid Q}
+\end{align*}
+\end{example}
+
+\section{Modelling locks, semaphores, and race conditions}
+
+We can use CCS to model common concurrent programming constructs,
+helping us to understand their behaviour. The following accompanies
+the lectures for this concept.
+
+The following is a simple CCS model for the
+vending machine of \texttt{TeaRoomInitial.java}:
+%
+\setlength{\arraycolsep}{0.2em}
+\begin{align*}
+\begin{array}{rrcl}
+%%
+(\textit{accounting})\quad &
+\textit{Inc}(p).P & \defn{} & \op{\textit{p}}{+1}.P \\
+& \textit{Dec}(s).P & \defn{} & \op{\textit{s}}{-1}.P \\
+& A.P & \defn{} & \textit{Dec}(s).\textit{Inc}(p).P \\[0.75em]
+%%
+%%
+(\textit{vend})\quad & V & \defn{} & \act{coin}.\da{lock}.A.\da{unlock}.\da{tea} \\
+%%
+(\textit{machine})\quad & M & \defn{} & V \mid M
+%%
+\end{array}
+\end{align*}
+%
+The ``{accounting}'' agent $A$ provides the behaviour of reading and
+then updating two variables: incrementing the profit $p$ and
+decrementing the supply $s$. Note that we abuse notation slightly here
+and definition \emph{parametric} processes $\mathit{Inc}(p)$ and
+$\mathit{Dec}(s)$ parameterised by the name of some variable we are
+changing.  This is not real CCS syntax, but a bit of meta-level
+syntactic sugar to simplify the model.
+
+The vending
+machine receives a $\act{coin}$, then requests the lock before trying to behave as an accounting
+agent, then unlocking and sending tea.
+Since a machine is a shared object for which the
+\texttt{vend} method can be called arbitrarily and concurrently,
+a machine $M$ is an infinite parallel composition of $V$.
+
+
+
+A customer and a lock (a shared object) are defined:
+%
+\setlength{\arraycolsep}{0.2em}
+\begin{align*}
+\begin{array}{rrcl}
+(\textit{lock})\qquad & L & \defn{} & \act{lock}.\act{unlock}.L \\
+(\textit{customer})\qquad & C & \defn{} & \da{coin}.\act{tea}.C
+\end{array}
+\end{align*}
+
+\noindent
+The following CCS agent then models two consumers at the vending machine:
+%
+\begin{align*}
+  & \nu \act{coin} . \; \nu \act{tea} . \; \nu \act{lock} . \;
+\nu \act{unloack} . \; {({C} \mid C \mid {M} \mid L)}
+\end{align*}
+  %
+We are \emph{restricting} the names \act{coin}, \act{tea},
+\act{lock} and \act{unlock} so that handshaking is guaranteed
+(see Theorem~\ref{thm:forcing-handshaking}).
+The following gives a trace of the model, but we elide the restriction
+since it is not necessary to get the following trace.
+
+\renewcommand{\restr}[2]{#1}
+
+\iffalse
+\newcommand{\asrch}[1]{#1}
+\newcommand{\atrgh}[1]{#1}
+\newcommand{\asrc}[1]{#1}
+
+\begin{align*}
+ \restr{\asrch{C} \mid C \mid \asrch{M}}{\actions{}} \;\;
+\equiv \;\;
+ \restr{\asrch{C} \mid C \mid V \mid V \mid \asrch{M}}{\actions{}} \;\;
+\equiv \;\; & \restr{\atrgh{\asrc{\da{coin}}.\act{tea}.C} \mid \asrc{\da{coin}}.\act{tea}.C \mid \atrgh{\asrc{\act{coin}}.A.\da{tea} \mid \asrc{\act{coin}}.A.\da{tea} \mid M}}{\actions{}} \\
+%%%%
+\xrightarrow{\tau} \;\; & \restr{\act{tea}.C \mid \asrc{\da{coin}}.\act{tea}.C \mid A.\da{tea} \mid \asrc{\act{coin}}.A.\da{tea} \mid \asrch{M}}{\actions{}}  \\
+%%%%%
+\xrightarrow{\tau} \;\; &
+ \restr{\act{tea}.C \mid {\act{tea}.C} \mid
+A.\da{tea} \mid
+A.\da{tea} \mid M}{\actions{}}
+\end{align*}
+\fi
+
+A process $P$ is highlighted as $\srch{P}$ when we are going to expand
+its definition in the next line, where $\trgh{P}$ marks the expanded
+definition. Pairs of dual (complementary) actions are highlighted as $\src{\act{a}}$
+and $\src{\dak{a}}$ when they are about to handshake via a
+$\xrightarrow{\tau}$ step.
+%%
+
+\newcommand{\actions}{(\ldots)}
+%
+\begin{align*}
+ \restr{\srch{C} \mid C \mid \srch{M} \mid L}{\actions{}} \;\,
+\equiv \;\; & \restr{\trgh{\src{\da{coin}}.\act{tea}.C} \mid C \mid \trgh{\src{\act{coin}}.\da{lock}.A.\da{unlock}.\da{tea} \mid M} \mid L}{\actions{}} \\
+%%%%%
+\xrightarrow{\tau} \;\; & \restr{{\act{tea}.C} \mid C \mid {{\da{lock}}.A.\da{unlock}.\da{tea} \mid M} \mid \srch{L}}{\actions{}} \\
+%%%%
+\equiv \;\; & \restr{{\act{tea}.C} \mid C \mid {{\src{\da{lock}}}.A.\da{unlock}.\da{tea} \mid M} \mid \trgh{\src{\act{lock}}.\act{unlock}.L}}{\actions{}} \\
+%%%%%
+\xrightarrow{\tau} \;\; & \restr{\act{tea}.C \mid \srch{C} \mid A.\da{unlock}.\da{tea} \mid \srch{M} \mid \act{unlock}.L}{\actions{}}  \\
+%%%%%
+\equiv \;\; & \restr{\act{tea}.C \mid \trgh{\src{\da{coin}}.\act{tea}.C} \mid A.\da{unlock}.\da{tea} \mid \trgh{\src{\act{coin}}.\da{lock}.A.\da{unlock}.\da{tea} \mid M} \mid \act{unlock}.L}{\actions{}} \\
+%%%%%
+\xrightarrow{\tau} \;\; & \restr{\act{tea}.C \mid {\act{tea}.C} \mid
+                          \underbrace{A.\da{unlock}.\da{tea}}_{\text{vend
+                          1}} \mid
+                          \underbrace{\subd{\da{lock}}.A.\da{unlock}.\da{tea}}_{\text{vend 2}}\mid M \mid \act{unlock}.L}{\actions{}}
+\end{align*}
+%
+The second vending process is not
+able to acquire the lock since there is no dual $\act{lock}$ action
+that is the head prefix of any other process. The ``vend 2'' process has to wait for
+the first one (``vend 1'') to unlock via $\da{unlock}$ which then puts the lock $L$
+back to its initial configuration. That is, after some steps dealing
+with accounting (which is now atomic) we get:
+%
+\begin{align*}
+   & \restr{\act{tea}.C \mid {\act{tea}.C} \mid
+                          \underbrace{\da{tea}}_{\text{vend
+                          1}} \mid
+                          \underbrace{{\da{lock}}.A.\da{unlock}.\da{tea}}_{\text{vend
+                          2}}\mid M \mid
+  \srch{L}}{\actions{}} \\
+ \equiv \;\; & \restr{\act{tea}.C \mid {\act{tea}.C} \mid
+                          {\da{tea}} \mid
+                          {\src{\da{lock}}.A.\da{unlock}.\da{tea}} \mid M \mid
+                \trgh{\src{\act{lock}}.\act{unlock}.L}}{\actions{}}
+\end{align*}
+%
+\noindent
+We define the following CCS model of \texttt{TeaRoomSem.java} which reuses
+the accounting agent $A$:
+%
+\setlength{\arraycolsep}{0.2em}
+\begin{align*}
+\begin{array}{rrcl}
+%%
+%(\textit{accounting})\qquad &
+%\textit{Inc}(p).P & \defn{} & \op{\textit{p}}{+1}.P \\
+%& \textit{Dec}(s).P & \defn{} & \op{\textit{s}}{-1}.P \\
+%& A.P & \defn{} & \textit{Dec}(s).\textit{Inc}(p).P \\
+%%%
+(\textit{1-semaphore})\qquad & S_1 & \defn{} & \act{acq}.\act{rel}.S_1 \\
+%%
+(\textit{n-semaphore})\qquad & S_n & \defn{} & S_1 \mid S_{n-1} \\[0.5em]
+%%
+(\textit{vend})\qquad & V & \defn{} & \act{coin}.\da{acq}.A.\da{rel}.\da{tea} \\
+%%
+(\textit{machine})\qquad & M & \defn{} & V \mid M \\
+%%
+(\textit{customer})\qquad & C & \defn{} & \da{coin}.\act{tea}.C \\
+\end{array}
+\end{align*}
+
+\noindent
+A semaphore with $n$ permissions (capacity) is modelled by $S_n$ which
+composes in parallel $n$ copies of the binary semaphore agent
+$S_1$. We can see that a binary semaphore is basically the same as our
+previous model of a lock $L$.  However, now $n$ processes can be
+in their critical section.
+
+The following trace models two consumers at a vending machine
+with a semaphore that has two permissions:
+%
+%\renewcommand{\srch}[1]{#1}
+%\renewcommand{\trgh}[1]{#1}
+%\renewcommand{\subd}[1]{#1}
+%\renewcommand{\src}[1]{#1}
+
+\begin{align*}
+  \restr{\srch{C} \mid C \mid \srch{M} \mid S_2}{(\act{coin}, \act{tea}, \da{acq}, \act{rel}} \;\,
+\equiv \;\; & \restr{\trgh{\src{\da{coin}}.\act{tea}.C} \mid C \mid \trgh{\src{\act{coin}}.\da{acq}.A.\da{rel}.\da{tea} \mid M} \mid S_2}{(\ldots)} \\
+%%%%%
+\xrightarrow{\tau} \;\; & \restr{{\act{tea}.C} \mid C \mid {{\da{acq}}.A.\da{rel}.\da{tea} \mid M} \mid \srch{S_2}}{(\ldots)} \\
+%%%%
+\equiv \;\; & \restr{{\act{tea}.C} \mid C \mid {{\src{\da{acq}}}.A.\da{rel}.\da{tea} \mid M} \mid \trgh{\src{\act{acq}}.\act{rel}.S_1 \mid S_1}}{(\ldots)} \\
+%%%%%
+\xrightarrow{\tau} \;\; & \restr{\act{tea}.C \mid \srch{C} \mid A.\da{rel}.\da{tea} \mid \srch{M} \mid \act{rel}.S_1
+\mid {S_1}}{(\ldots)}  \\
+%%%%%
+\equiv \;\; & \restr{\act{tea}.C \mid \trgh{\src{\da{coin}}.\act{tea}.C} \mid A.\da{rel}.\da{tea} \mid \trgh{\src{\act{coin}}.\da{acq}.A.\da{rel}.\da{tea} \mid M} \mid \act{rel}.S_1
+\mid S_1}{(\ldots)} \\
+%%%%%
+\xrightarrow{\tau} \;\; & \restr{\act{tea}.C \mid {\act{tea}.C} \mid A.\da{rel}.\da{tea} \mid {\da{acq}.A.\da{rel}.\da{tea} \mid M} \mid \act{rel}.S_1
+\mid \srch{S_1}}{(\ldots)} \\
+%%%%%
+\equiv \;\; & \restr{\act{tea}.C \mid {\act{tea}.C} \mid A.\da{rel}.\da{tea} \mid {\src{\da{acq}}.A.\da{rel}.\da{tea} \mid M} \mid \act{rel}.S_1
+\mid \trgh{\src{\act{acq}}.\act{rel}.S_1}}{(\ldots)} \\
+%%%%%%
+\xrightarrow{\tau} \;\; & \restr{\act{tea}.C \mid {\act{tea}.C} \mid \subd{A.\da{rel}.\da{tea} \mid A.\da{rel}.\da{tea}} \mid M \mid \act{rel}.S_1
+\mid {\act{rel}.S_1}}{(\ldots)}
+\end{align*}
+%
+We now have a race condition in the reduction of the yellow highlighted
+sub-process, which we show separate from the rest of the context
+(which is independent) setting $Q = \da{rel}.\da{tea}$:
+%
+\begin{align*}
+\\[-1.5em]
+\begin{array}{c}
+\xymatrix@C=-2em@R=2em{
+& & A.Q \mid A.Q \ar[dl]_{\act{r}(s)} \ar[dr]^{\act{r}(s)} & & \\
+& \da{w}(s-1).\textit{Inc}(p).Q \mid A.Q
+\ar@{->}[dl]_(.65){\dak{w}(s-1)} \ar@{->}[dr]^(.5){\act{r}(s)}
+ & & A.Q \mid \da{w}(s-1).\textit{Inc}(p).Q \ar@{->}[dl]_(.5){\act{r}(s)} \ar@{->}[dr]^(.65){\dak{w}(s-1)} & \\
+\textit{Inc}(p).Q \mid A.Q & & \subd{\da{w}(s-1).\textit{Inc}(p).Q \mid \da{w}(s-1).\textit{Inc}(p).Q} &
+ & A.Q \mid \textit{Inc}(p).Q
+}
+\end{array}
+\\[-1.5em]
+\end{align*}
+
+\noindent
+Note that the middle term is achieved when the left and right
+hand processes interleave their reads, leading to a state where
+both processes have read the same value of $s$ (the supply) and will write the
+same value of $s-1$, shadowing the fact that \textbf{two} processes are actually
+reducing the supply.
+
+Furthermore, this can hide the situation where the supply is only one
+($s = 1$) and therefore only one process is allowed to consume from the supply.
+But if both processes interleave their reads as in the above, they will both
+see a view of the world where $s = 1$ and erroneously assume there is
+enough in the supply for them both to proceed.
+
+Thus we see that semaphores alone cannot prevent \emph{race conditions}.
+If semaphore-guarded code contains shared state, we must also enforce
+mutual exclusion on that shared state via an additional binary semaphore
+or mutual-exclusion lock.
+
+\iffalse
+
+\begin{equation*}
+{\mathsf{coin}}.\mathsf{acq}.A.\overline{\mathsf{rel}}.\overline{\mathsf{tea}}
+\mid
+{\overline{\mathsf{coin}}}.\mathsf{tea}.\mathsf{wait}.C
+\mid
+S_1
+\end{equation*}
+
+%\iffalse
+\begin{align*}
+C \mid V \mid S_1
+%%%%
+\; \equiv \;
+%%%%
+\src{\mathsf{coin}}.\mathsf{acq}.A.\overline{\mathsf{rel}}.\overline{\mathsf{tea}}
+\mid
+\src{\overline{\mathsf{coin}}}.\mathsf{tea}.\mathsf{wait}.C
+\mid
+S_1
+%%%%
+& \,\; \xrightarrow{\tau} \;\,
+%%%
+\mathsf{acq}.A.\overline{\mathsf{rel}}.\overline{\mathsf{tea}}
+\mid \mathsf{tea}.\mathsf{wait}.C
+\mid \srch{S_1} \\
+%%%%
+& \,\; \equiv \;\,
+\src{\mathsf{acq}}.A.\overline{\mathsf{rel}}.\overline{\mathsf{tea}}
+\mid \mathsf{tea}.\mathsf{wait}.C
+\mid \src{\act{acq}}.\act{rel}.S_1 \\
+%%%
+& \,\; \xrightarrow{\tau} \;\,
+\src{A}.\overline{\mathsf{rel}}.\overline{\mathsf{tea}}
+\mid \mathsf{tea}.\mathsf{wait}.C
+\mid \act{rel}.S_1 \\
+%%%
+& \,\; \rightarrow^\ast \;\,
+\src{\overline{\mathsf{rel}}}.\overline{\mathsf{tea}}
+\mid \mathsf{tea}.\mathsf{wait}.C
+\mid \src{\act{rel}}.S_1 \\
+& \,\; \rightarrow^\tau \;\,
+\overline{\mathsf{tea}}
+\mid \mathsf{tea}.\mathsf{wait}.C
+\mid S_1 \\
+\end{align*}
+%\fi
+
+\fi
+
+\section{Structural congruence}
+
+A basic notion of equality can be ascribed to processes which explains
+when processes are treated as being the same. This equality
+relation, which we write as $\equiv$, is known
+as  \emph{structural congruence}. Which we define in chunks
+here based on the main syntactic construct of interest.
+
+Firstly, for parallel composition, structural congruence is defined:
+%
+\begin{align*}
+  P \mid Q & \equiv Q \mid P \\
+    (P \mid Q) \mid R & \equiv P \mid (Q \mid R) \\
+    P \mid \mathbf{0} & \equiv P \\
+\end{align*}
+i.e., parallel composition is commutative and associative,
+and has the inactive process $\mathbf{0}$ as a unit;
+parallel composition is a commutative monoid with $\mathbf{0}$.
+
+For choice, we get the equations:
+%
+\begin{align*}
+ P + Q & \equiv Q + P \\
+(P + Q) + R & \equiv P + (Q + R) \\
+ P + \mathbf{0} & \equiv P \\
+ P + P & \equiv P \\
+\end{align*}
+Thus, choice is commutative, associative, has
+$\mathbf{0}$ as a unit, and is also idempotent:
+choosing between the same thing is no choice at all.
+
+Finally, for restriction we have some more involved rules
+with side conditions, that related to how we can distribute
+bindings (that is, move them with respect to other pieces
+of syntax). In these equations we make use of a meta-level
+operation on processes $\mathsf{FN}(P)$ which returns the
+set of free names (i.e. unrestricted names) in $P$.
+For example $\mathsf{FN}(a.b.\mathbf{0}) = \{a, b\}$
+but $\mathsf{FN}(a.\mathbf{0} \mid \nu b . (b . \mathbf{0})) =
+\{a \}$.
+%
+\begin{align*}
+  \begin{array}{rll}
+  \nu a . P & \equiv P & \text{if} \; a,
+  \overline{a} \not\in \mathsf{FN}(P)  \\
+ \nu a . (P + Q) & \equiv \nu a . P + \nu a . Q \\
+ \nu a. (P \mid Q) & \equiv \nu a. P \mid \nu a. Q & \text{if}\;(a
+  \in \mathsf{FN}(P) \Rightarrow \overline{a} \notin \mathsf{FN}(Q)) 
+ \wedge (a \in \mathsf{FN}(Q) \Rightarrow \overline{a} \not\in
+  \mathsf{FN}(P))  \\
+\nu a. (P \mid Q) & \equiv (\nu a. P) \mid Q &\text{if}\;a,
+                                               \overline{a} \not\in
+                                               \mathsf{FN}(Q)
+\end{array}
+\end{align*}
+%
+The first allows us to drop redundant restrictions. The second allows
+us to distribute restriction inside choice. The third allows us to
+distribute restriction inside parallel composition only if
+$P$ and $Q$ cannot handshake via $a$. The fourth equation
+states that we can shrink or grow the scope of a restriction
+over processes that don't mention the restricted name.
+
+We can apply structural congruences to simplify processes. For
+example:
+%
+\begin{align*}
+  \exampleLabel{}
+  P + (\mathbf{0} \mid P) \equiv P
+\end{align*}
+%
+
+\section{Bisimulation}
+
+Often we want to be able to reason about whether two proceses behave
+the same. For example, when programming, we might come up with a
+refactoring or simplification which we want to ensure behaves in the
+same way as the old program. Or, we might one to use one process
+as a specification for another, giving a simple but inefficient
+definition as the specification, against which we want to compare the
+complicated but efficient implementation that we use. We can
+describe process equivalence by comparing process behaviour:
+that is, do the two proceses behave in the same way?
+
+The notion of behaviour equivalence we study in this course is called
+\emph{strong bisimulation}. This notion of behaviour equivalence
+compares step-by-step what two proceses can do. Roughly, if we say
+that a process $P$ is \emph{bisimilar} to a process $Q$ one process if
+$P$ can make a reduction step with label $l$ then so can $Q$, and vice
+versa, and the processes reached after reduction are also
+bisimilar. This is encapsulated by the following definition,
+which is actually a property of a relation.
+
+\begin{definition}[Bisimulation]
+  A relation $\mathcal{R}$ between processes is a bisimulation
+  relation iff it satisfies the following: for all processes
+  $P$ and $Q$ then:
+  %
+  \begin{align*}
+    \begin{array}{rl}
+P \mathcal{R} Q \qquad \Rightarrow & \forall P', l . \;\;\; P \xrightarrow{l} P' \;\; \Rightarrow \;\;
+      (\exists Q'' . Q \xrightarrow{l} Q'' \; \wedge \; P' \mathcal{R}
+      Q'') \\
+      \wedge & \;\; \forall Q', l . \;\:\; Q \xrightarrow{l} Q'  \;\; \Rightarrow \;\; (\exists P'' . P \xrightarrow{l} P'' \; \wedge \; P'' \mathcal{R} Q')
+      \end{array}
+  \end{align*}
+\end{definition}
+%
+\begin{definition}[Strong bisimulation]
+  Two processes $P$ and $Q$ are \emph{bisimilar} if $P \sim Q$
+  where $\sim$ is the largest bisimulation, defined:
+  %
+  \begin{equation*}
+\sim = \bigcup \{\mathcal{R} \mid \mathcal{R} \; \textit{is a bisimulation} \}
+  \end{equation*}
+  (i.e. $\sim$ incorporates all possible bisimulation relations over processes).
+\end{definition}
+%
+The following are some small examples:
+%
+\begin{itemize}
+\item $(a.\mathbf{0} \mid \overline{a}.\mathbf{0})
+\; \sim \; a.\overline{a}.\mathbf{0} + \overline{a}.a.\mathbf{0} +
+\tau.0$;
+\item $P \; \sim\;  a.Q$ where $P
+{\mathrel{\mathop{=}\limits^{{def}}}} a.b.P$
+and $Q {\mathrel{\mathop{=}\limits^{{def}}}} b.a.Q$;
+\item $a.(b+c) \not\sim a.b + a.c$ (i.e., distributing
+a prefix inside a choice leads to different behaviour).
+\end{itemize}
+%
+The lecture gives more examples and motivates this definition further.
+
+\end{document}
