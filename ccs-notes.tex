@@ -120,7 +120,7 @@ $A$ to range over identifiers for processes (i.e., concrete names
 given to processes, see below on ``Process definitions'').
 
 The following gives a few examples to give some intuition, but in the
-next section we will look at the concrete semantics of proceses
+next section we will look at the concrete semantics of processes
 which will make precise what each part of the syntax means.
 %
 \begin{itemize}
@@ -959,7 +959,7 @@ example:
 
 \section{Bisimulation}
 
-Often we want to be able to reason about whether two proceses behave
+Often we want to be able to reason about whether two processes behave
 the same way. For example, when programming, we might come up with a
 refactoring or simplification which we want to ensure behaves in the
 same way as the old program. Or, we might want to use one process
@@ -967,11 +967,11 @@ as a specification for another, giving a simple but inefficient
 definition as the specification, against which we want to compare the
 complicated but efficient implementation that we use. We can
 describe process equivalence by comparing process behaviour:
-that is, do the two proceses behave in the same way?
+that is, do the two processes behave in the same way?
 
 The notion of behaviour equivalence we study in this course is called
 \emph{strong bisimulation}. This notion of behaviour equivalence
-compares step-by-step what two proceses can do. Roughly, if we say
+compares step-by-step what two processes can do. Roughly, if we say
 that a process $P$ is \emph{bisimilar} to a process $Q$ one process if
 $P$ can make a reduction step with label $l$ then so can $Q$, and vice
 versa, and the processes reached after reduction are also
