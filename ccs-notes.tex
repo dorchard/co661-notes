@@ -969,14 +969,14 @@ complicated but efficient implementation that we use. We can
 describe process equivalence by comparing process behaviour:
 that is, do the two processes behave in the same way?
 
-The notion of behaviour equivalence we study in this course is called
-\emph{strong bisimulation}. This notion of behaviour equivalence
-compares step-by-step what two processes can do. Roughly, if we say
-that a process $P$ is \emph{bisimilar} to a process $Q$ one process if
-$P$ can make a reduction step with label $l$ then so can $Q$, and vice
-versa, and the processes reached after reduction are also
-bisimilar. This is encapsulated by the following definition,
-which is actually a property of a relation.
+The notion of behavioural equivalence we study in this course is
+called \emph{strong bisimulation}. This notion of behavioural
+equivalence compares step-by-step what two processes can do. Roughly,
+we say that a process $P$ is \emph{bisimilar} to a process $Q$ if
+whenever $P$ can make a reduction step with label $l$, then so can $Q$
+(and vice versa), and the processes reached after reduction are also
+bisimilar. This is encapsulated by the following definition, which is
+actually a property of a relation:
 
 \begin{definition}[Bisimulation]
   A relation $\mathcal{R}$ between processes is a bisimulation
