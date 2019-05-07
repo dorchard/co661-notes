@@ -120,7 +120,7 @@ $A$ to range over identifiers for processes (i.e., concrete names
 given to processes, see below on ``Process definitions'').
 
 The following gives a few examples to give some intuition, but in the
-next section we will look at the concrete semantics of proceses
+next section we will look at the concrete semantics of processes
 which will make precise what each part of the syntax means.
 %
 \begin{itemize}
@@ -165,7 +165,7 @@ following defines a process named $A$:
 A \; {\mathrel{\mathop{=}\limits^{{def}}}} \; a.b.A
 \end{equation*}
 %
-The process is recursively defined, and performs actions $a$ then $b$ 
+The process is recursively defined, and performs actions $a$ then $b$
 continuously.
 
 Processes can be mutually recursive. For example, we could
@@ -213,7 +213,7 @@ processes can contain processes) so the definition of $\rightarrow$ is
 inductively defined. We leverage the \emph{inference rule} style, with
 inductive rules having one or more premises and axiom rules with no
 premises. Each piece of syntax has at least one corresponding rule for
-$\rightarrow$, giving the semantics of each syntactic construct. 
+$\rightarrow$, giving the semantics of each syntactic construct.
 
 \paragraph{Actions}
 
@@ -331,10 +331,10 @@ synchronisation, co-ordination, or communication between processes.
   $V$ and a customer $C$:
   %
   \begin{align*}
-V  & {\mathrel{\mathop{=}\limits^{{def}}}} 
+V  & {\mathrel{\mathop{=}\limits^{{def}}}}
      {\mathsf{coin}}.\overline{\mathsf{tea}}.V \\
-C & {\mathrel{\mathop{=}\limits^{{def}}}} 
-\overline{\mathsf{coin}}.{\mathsf{tea}}.C   
+C & {\mathrel{\mathop{=}\limits^{{def}}}}
+\overline{\mathsf{coin}}.{\mathsf{tea}}.C
   \end{align*}
   %
   Since $V$ can reduce by emitting the action $\mathsf{coin}$ and
@@ -363,7 +363,7 @@ to just one side of the choice, given by the rules:
 \begin{align*}
 \trule{choice1}\dfrac{P_1 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q}
 \qquad
-\trule{choice2}\dfrac{P_2 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q} 
+\trule{choice2}\dfrac{P_2 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q}
 \end{align*}
 %
 \begin{example} For a process $b.P + c.Q$, the top-level syntactic
@@ -520,7 +520,7 @@ the reduction:
 \begin{align*}
   \trule{relabel}
 \dfrac{P \xrightarrow{l} Q}
-  {P[b/a] \xrightarrow{l[b/a]} P[b/a]}
+  {P[b/a] \xrightarrow{l[b/a]} Q[b/a]}
 \end{align*}
 %
 where relabelling $l[b/a]$ means to relabel name $a$ to $b$ for the label $l$, defined:
@@ -561,7 +561,7 @@ Relabelling is useful when reusing definitions for different purposes
 \qquad
 \trule{relabel}
 \dfrac{P \xrightarrow{l} Q}
-      {P[b/a] \xrightarrow{l[b/a]} P[b/a]}
+      {P[b/a] \xrightarrow{l[b/a]} Q[b/a]}
 \end{array} \\
 \end{align*}
 where relabelling $l[b/a]$ means to relabel name $a$ to $b$ for the label $l$, defined:
@@ -577,7 +577,7 @@ l & \textit{otherwise}
 \end{mdframed}
 
 \begin{example}
-  Here is an extended example of a 
+  Here is an extended example of a
   derivation of one possible reduction for the process
 defined $A \stackrel{\textit{def}}{=} a . \mathbf{0} \mid (b . P + c.Q)$:
 %
@@ -655,7 +655,7 @@ The following CCS agent then models two consumers at the vending machine:
 %
 \begin{align*}
   & \nu \act{coin} . \; \nu \act{tea} . \; \nu \act{lock} . \;
-\nu \act{unloack} . \; {({C} \mid C \mid {M} \mid L)}
+\nu \act{unlock} . \; {({C} \mid C \mid {M} \mid L)}
 \end{align*}
   %
 We are \emph{restricting} the names \act{coin}, \act{tea},
@@ -932,7 +932,7 @@ but $\mathsf{FN}(a.\mathbf{0} \mid \nu b . (b . \mathbf{0})) =
   \overline{a} \not\in \mathsf{FN}(P)  \\
  \nu a . (P + Q) & \equiv \nu a . P + \nu a . Q \\
  \nu a. (P \mid Q) & \equiv \nu a. P \mid \nu a. Q & \text{if}\;(a
-  \in \mathsf{FN}(P) \Rightarrow \overline{a} \notin \mathsf{FN}(Q)) 
+  \in \mathsf{FN}(P) \Rightarrow \overline{a} \notin \mathsf{FN}(Q))
  \wedge (a \in \mathsf{FN}(Q) \Rightarrow \overline{a} \not\in
   \mathsf{FN}(P))  \\
 \nu a. (P \mid Q) & \equiv (\nu a. P) \mid Q &\text{if}\;a,
@@ -959,24 +959,24 @@ example:
 
 \section{Bisimulation}
 
-Often we want to be able to reason about whether two proceses behave
-the same. For example, when programming, we might come up with a
+Often we want to be able to reason about whether two processes behave
+the same way. For example, when programming, we might come up with a
 refactoring or simplification which we want to ensure behaves in the
-same way as the old program. Or, we might one to use one process
+same way as the old program. Or, we might want to use one process
 as a specification for another, giving a simple but inefficient
 definition as the specification, against which we want to compare the
 complicated but efficient implementation that we use. We can
 describe process equivalence by comparing process behaviour:
-that is, do the two proceses behave in the same way?
+that is, do the two processes behave in the same way?
 
-The notion of behaviour equivalence we study in this course is called
-\emph{strong bisimulation}. This notion of behaviour equivalence
-compares step-by-step what two proceses can do. Roughly, if we say
-that a process $P$ is \emph{bisimilar} to a process $Q$ one process if
-$P$ can make a reduction step with label $l$ then so can $Q$, and vice
-versa, and the processes reached after reduction are also
-bisimilar. This is encapsulated by the following definition,
-which is actually a property of a relation.
+The notion of behavioural equivalence we study in this course is
+called \emph{strong bisimulation}. This notion of behavioural
+equivalence compares step-by-step what two processes can do. Roughly,
+we say that a process $P$ is \emph{bisimilar} to a process $Q$ if
+whenever $P$ can make a reduction step with label $l$, then so can $Q$
+(and vice versa), and the processes reached after reduction are also
+bisimilar. This is encapsulated by the following definition, which is
+actually a property of a relation:
 
 \begin{definition}[Bisimulation]
   A relation $\mathcal{R}$ between processes is a bisimulation
