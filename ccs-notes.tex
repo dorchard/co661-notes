@@ -53,7 +53,8 @@
 \date{\vspace{-2em}Last updated on \today}
 
 \definecolor{labelColor}{RGB}{201,46,124}
-\newcommand{\trule}[1]{\textcolor{labelColor}{\textit{\textsf{#1}}}\;}
+\newcommand{\trule}[1]{\truleInner{#1}\;}
+\newcommand{\truleInner}[1]{\textcolor{labelColor}{\textit{\textsf{#1}}}}
 
 \begin{document}
 \maketitle{}
@@ -1017,5 +1018,68 @@ a prefix inside a choice leads to different behaviour).
 \end{itemize}
 %
 The lecture gives more examples and motivates this definition further.
+
+\begin{example}
+  Why is it the case that $a.(b.\mathbf{0}+c.\mathbf{0}) \not\sim a.b.\mathbf{0} + a.c.\mathbf{0}$? Let's take it
+  a step at a time.
+
+  Let $P = a.(b.\mathbf{0}+c.\mathbf{0})$ and let $Q = a.b.\mathbf{0} + a.c.\mathbf{0}$.
+  We must consider every transition that $P$ can make. In this case, $P$
+  can just do one transition 
+  $a.(b.\mathbf{0}+c.\mathbf{0}) \xrightarrow{a} (b.\mathbf{0} + c.\mathbf{0})$. Let $P' = b.\mathbf{0} + c.\mathbf{0}$.
+
+  Now we need some transition $Q \xrightarrow{a} Q'$ such that
+  $P' \sim Q'$. There are two such possible transitions for $Q$--- we
+  need just one to work. Let's try each in turn.
+
+  \begin{itemize}
+    \item $(a.b.\mathbf{0} + a.c.\mathbf{0}) \xrightarrow{a}
+    b.\mathbf{0}$ (by \truleInner{choice1})
+    thus $Q' = b.\mathbf{0}$.
+
+    We now consider the recursive case of the bisimulation argument:
+     $P' \sim Q'$? i.e. $b.\mathbf{0} + c.\mathbf{0} \sim b.\mathbf{0}$? We need to look at all possible
+    transitions that $P'$ can make. Since $P' = b.\mathbf{0} +
+    c.\mathbf{0}$
+    then there are two possibilities both of which we need to consider:
+    %
+    \begin{itemize}
+      \item $(b.\mathbf{0} + c.\mathbf{0}) \xrightarrow{b}
+      \mathbf{0}$.
+      
+      Can $Q'$ do this transition? Yes. $Q' = b.\mathbf{0}
+      \xrightarrow{b} \mathbf{0}$. And trivially $\mathbf{0} \sim
+      \mathbf{0}$.
+
+      \item $(b.\mathbf{0} + c.\mathbf{0}) \xrightarrow{c}
+      \mathbf{0}$.
+      
+      Can $Q'$ do this transition? No, since $Q'$ can only do a $b$
+      transition.
+    \end{itemize}
+    %
+    Therefore, this is not a viable reduction for $Q'$ so
+    $P' \not\sim Q'$. Our only hope is the other possibility for $Q'$
+    which we try in the next case:
+
+    \item $(a.b.\mathbf{0} + a.c.\mathbf{0}) \xrightarrow{a}
+    c.\mathbf{0}$ (by \truleInner{choice2}) thus $Q' = c.\mathbf{0}$.
+
+    Again we consider the recursive case of the bisimulation argument,
+    i.e., does $P' \sim Q'$? Since $P' = b.\mathbf{0} +
+    c.\mathbf{0}$ we again have two possibility that we need to check:
+    %
+    \begin{itemize}
+      \item $(b.\mathbf{0} + c.\mathbf{0}) \xrightarrow{b}
+      \mathbf{0}$.
+      
+      Can $Q'$ do this transition? No since $Q' = c.\mathbf{0}$ it can
+      only do a $c$ transition. So $P' \not\sim Q'$.
+    \end{itemize}
+    
+  \end{itemize}
+  %
+  Thus overall $P \not\sim Q$, i.e. $a.(b.\mathbf{0}+c.\mathbf{0}) \not\sim a.b.\mathbf{0} + a.c.\mathbf{0}$.
+\end{example}
 
 \end{document}
