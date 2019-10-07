@@ -908,9 +908,9 @@ S_1
 \section{Structural congruence}
 
 A basic notion of equality can be ascribed to processes which explains
-when processes are treated as being the same. This equality
+when processes are treated as being ``the same''. This equality
 relation, which we write as $\equiv$, is known
-as  \emph{structural congruence}. Which we define in chunks
+as  \emph{structural congruence}, which we define in chunks
 here based on the main syntactic construct of interest.
 
 Firstly, for parallel composition, structural congruence is defined:
@@ -918,7 +918,7 @@ Firstly, for parallel composition, structural congruence is defined:
 \begin{align*}
   P \mid Q & \equiv Q \mid P \\
     (P \mid Q) \mid R & \equiv P \mid (Q \mid R) \\
-    P \mid \mathbf{0} & \equiv P \\
+    P \mid \mathbf{0} & \equiv P
 \end{align*}
 i.e., parallel composition is commutative and associative,
 and has the inactive process $\mathbf{0}$ as a unit;
@@ -930,14 +930,14 @@ For choice, we get the equations:
  P + Q & \equiv Q + P \\
 (P + Q) + R & \equiv P + (Q + R) \\
  P + \mathbf{0} & \equiv P \\
- P + P & \equiv P \\
+ P + P & \equiv P
 \end{align*}
 Thus, choice is commutative, associative, has
-$\mathbf{0}$ as a unit, and is also idempotent:
+$\mathbf{0}$ as a unit, and is also idempotent (lat equation):
 choosing between the same thing is no choice at all.
 
 Finally, for restriction we have some more involved rules
-with side conditions, that related to how we can distribute
+with side conditions, that relate to how we can distribute
 bindings (that is, move them with respect to other pieces
 of syntax). In these equations we make use of a meta-level
 operation on processes $\mathsf{FN}(P)$ which returns the
@@ -966,10 +966,10 @@ us to distribute restriction inside choice. The third allows us to
 distribute restriction inside parallel composition only if
 $P$ and $Q$ cannot handshake via $a$. The fourth equation
 states that we can shrink or grow the scope of a restriction
-over processes that don't mention the restricted name.
+over processes that don't mention the restricted name ($Q$ in this case).
 
-We can apply structural congruences to simplify processes. For
-example:
+We can apply structural congruences to simplify processes by
+algebraic manipulation. For example:
 %
 \begin{align*}
   \exampleLabel{}
@@ -980,14 +980,14 @@ example:
 \section{Bisimulation}
 
 Often we want to be able to reason about whether two processes behave
-the same way. For example, when programming, we might come up with a
+in the same way. For example, when programming, we might come up with a
 refactoring or simplification which we want to ensure behaves in the
 same way as the old program. Or, we might want to use one process
 as a specification for another, giving a simple but inefficient
 definition as the specification, against which we want to compare the
-complicated but efficient implementation that we use. We can
+complicated but efficient implementation that we use in production. We can
 describe process equivalence by comparing process behaviour:
-that is, do the two processes behave in the same way?
+i.e., do two processes behave in the same way?
 
 The notion of behavioural equivalence we study in this course is
 called \emph{strong bisimulation}. This notion of behavioural
@@ -1030,8 +1030,8 @@ The following are some small examples:
 \; \sim \; a.\overline{a}.\mathbf{0} + \overline{a}.a.\mathbf{0} +
 \tau.0$;
 \item $P \; \sim\;  a.Q$ where $P
-{\mathrel{\mathop{=}\limits^{{def}}}} a.b.P$
-and $Q {\mathrel{\mathop{=}\limits^{{def}}}} b.a.Q$;
+\defn{} a.b.P$
+and $Q \defn{} b.a.Q$;
 \item $a.(b+c) \not\sim a.b + a.c$ (i.e., distributing
 a prefix inside a choice leads to different behaviour).
 \end{itemize}
@@ -1077,8 +1077,9 @@ The lecture gives more examples and motivates this definition further.
       transition.
     \end{itemize}
     %
-    Therefore, this is not a viable reduction for $Q'$ so
-    $P' \not\sim Q'$. Our only hope is the other possibility for $Q'$
+    Therefore,
+    $P' \not\sim Q'$ so applying \truleInner{choice1} to $Q$ does not
+    lead to a bisimilar situation. Our only hope is the other possibility for $Q'$
     which we try in the next case:
 
     \item $(a.b.\mathbf{0} + a.c.\mathbf{0}) \xrightarrow{a}
