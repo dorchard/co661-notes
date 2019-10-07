@@ -340,7 +340,7 @@ In this case we have the processes $P$ and $Q$ making a reduction step
 actions $a$ and $\overline{a}$. We can use this to model notions of
 synchronisation, co-ordination, or communication between processes.
 The action $\tau$ is described as a ``silent'' action because an
-outside cannot observe which names were used in the handshake.
+outsider cannot observe which names were used in the handshake.
 
 \begin{example}
   Consider the following processes representing a vending machine
@@ -374,7 +374,7 @@ C & \; \defn{} \;
 \paragraph{Choice}
 A non-deterministic choice between two processes $P + Q$ reduces
 by reducing just one side, resulting in a process that corresponds
-to just one side of the choice, given by the rules:
+to just that one side of the choice, given by the rules:
 %
 \begin{align*}
 \trule{choice1}\dfrac{P_1 \xrightarrow{l} Q}{P_1 + P_2 \xrightarrow{l} Q}
@@ -480,25 +480,29 @@ We can encapsulate the above notion via a theorem:
    Q \xrightarrow{\dual{a}} Q' \; \wedge
       P \neq P' \wedge Q \neq Q' \\
     \Leftrightarrow \;\;\; &
-\nu a . P \mid Q \, \xrightarrow{\tau} \, \nu a . P' \mid Q'
+\nu a . (P \mid Q) \; \xrightarrow{\tau} \; \nu a . (P' \mid Q')
     \end{align*}
   %
     That is, if two process can reduce by emitting dual names $a$ and
     $\dual{a}$, then their parallel composition under a restriction of
-    $a$ can only reduce by a handshake, and vice versa.\footnote{
-      The lecture stated this slightly differently with:
-  \begin{align*}
-    \forall P, P', Q, Q', a . \qquad &
-    P \mid Q \; \xrightarrow{a} \; P' \mid Q \;
-    \xrightarrow{\overline{a}} \; P' \mid Q' \\[-0.4em]
-   \vee \;\;\;  & P  \mid Q \; \xrightarrow{\overline{a}} \; P \mid Q'
-      \; \xrightarrow{{a}} \; P' \mid Q' \\
-    \Leftrightarrow \;\;\; &
-\nu a . P \mid Q \, \xrightarrow{\tau} \, \nu a . P' \mid Q'
-  \end{align*}
-This is essentially the same as the theorem here, but more complex
-than necessary. Note that we also make it clear here that
-$P$ and $P'$ must be distinct in order to get the bi-implication.}
+    $a$ can only reduce by a handshake, and vice versa.
+%
+% The following comment only makes sense for 2018/19 and is now
+% obviated in the 2019/20 lecture slides
+% \footnote{
+%       The lecture stated this slightly differently with:
+%   \begin{align*}
+%     \forall P, P', Q, Q', a . \qquad &
+%     P \mid Q \; \xrightarrow{a} \; P' \mid Q \;
+%     \xrightarrow{\overline{a}} \; P' \mid Q' \\[-0.4em]
+%    \vee \;\;\;  & P  \mid Q \; \xrightarrow{\overline{a}} \; P \mid Q'
+%       \; \xrightarrow{{a}} \; P' \mid Q' \\
+%     \Leftrightarrow \;\;\; &
+% \nu a . P \mid Q \, \xrightarrow{\tau} \, \nu a . P' \mid Q'
+%   \end{align*}
+% This is essentially the same as the theorem here, but more complex
+% than necessary. Note that we also make it clear here that
+% $P$ and $P'$ must be distinct in order to get the bi-implication.}
 \end{theorem}
 %
 Finally, a common syntactic shorthand for a several name restrictions is to
