@@ -9,22 +9,14 @@
 \usepackage{pifont}
 \usepackage{mdframed}
 \usepackage{url}
+
+% Package and parameters to do a compact table of contents
 \usepackage{tocloft}
 \setlength\cftparskip{0pt}
 \setlength\cftbeforesecskip{3pt}
 \setlength\cftaftertoctitleskip{5pt}
 
-\def\mystrut{\rule{0pt}{0.68em}}
-\newcommand{\act}[1]{\textsf{#1}}
-\newcommand{\da}[1]{\overline{\mystrut\textsf{#1}}}
-\newcommand{\defn}{\stackrel{\text{def}}{=}}
-
-\newcommand{\dak}[1]{\overline{\textsf{#1}}}
-
-\newcommand{\op}[2]{\act{r}(#1).\dak{w}(#1 #2)}
-\newcommand{\pEnd}{\mathbf{0}}
-
-
+% Colours and whitespace things
 \newcommand{\highlight}[1]{%
   \colorbox{yellow!50}{$\displaystyle#1$}}
 \newcommand{\highlightG}[1]{%
@@ -33,23 +25,32 @@
   \colorbox{red!25}{$\displaystyle#1$}}
 \newcommand{\highlightGH}[1]{%
   \colorbox{blue!5}{$\displaystyle#1$}}
+\newcommand{\spacer}{\rule[-0.3em]{0em}{0.3em}\rule{0em}{0.3em}}
+\def\mystrut{\rule{0pt}{0.68em}}
 
-\newcommand{\exampleLabel}{\tag{\small{\textcolor{blue}{\textsf{example}}}}}
-
+% Theorem environments and labels
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
 \newtheorem{theorem}{Theorem}
+\newcommand{\exampleLabel}{\tag{\small{\textcolor{blue}{\textsf{example}}}}}
 
+% Highlighters
 \newcommand{\src}[1]{\highlightR{#1}}
 \newcommand{\trg}[1]{\highlight{#1}}
 \newcommand{\srch}[1]{\highlightG{#1}}
 \newcommand{\trgh}[1]{\highlightGH{#1}}
 \newcommand{\subd}[1]{\highlight{#1}}
 
+% CCS notation things
 \newcommand{\dual}[1]{\overline{#1}}
-
 \newcommand{\restr}[2]{\nu #2 . #1}
+\newcommand{\act}[1]{\textsf{#1}}
+\newcommand{\da}[1]{\overline{\mystrut\textsf{#1}}}
+\newcommand{\defn}{\stackrel{\text{def}}{=}}
+\newcommand{\dak}[1]{\overline{\textsf{#1}}}
+\newcommand{\op}[2]{\act{r}(#1).\dak{w}(#1 #2)}
+\newcommand{\pEnd}{\mathbf{0}}
 
 \title{\vspace{-2em}CO661 - Theory and Practice of Concurrency \\
 {\Large{Notes on the Calculus of Communicating Systems (CCS)}}}
@@ -279,7 +280,6 @@ We can compose the \trule{action} and \trule{par1}
 rules to get the following derivation of a $\underline{\text{single}}$ reduction
 step for the process $a . P \mid b . Q$:
 %
-\newcommand{\spacer}{\rule[-0.3em]{0em}{0.3em}\rule{0em}{0.3em}}
 \begin{align*}
   \exampleLabel{}
   \trule{par1}\dfrac{\trule{action}
@@ -517,7 +517,7 @@ $A$ which itself can reduce. This is given by the rule:
 \begin{align*}
 \trule{def}
 \dfrac{P \xrightarrow{l} Q}
-      {A \xrightarrow{l} Q} \;\; (A {\mathrel{\mathop{=}\limits^{\textit{def}}}} P)
+  {A \xrightarrow{l} Q} \;\; (A \defn{} P)
 \end{align*}
 %
 \begin{example}
@@ -525,7 +525,7 @@ For example, if we have $\mathit{A} \defn{} a.b.A$ then we get
 the derivation:
 \begin{align*}
   \exampleLabel{}
-  \trule{def}\dfrac{\trule{action}\dfrac{}{a.b.A \xrightarrow{a} b.A}}
+  \trule{def}\dfrac{\trule{action}\dfrac{}{\spacer{}a.b.A \xrightarrow{a} b.A}}
                   {A \xrightarrow{a} b.A}
 \end{align*}
 \end{example}
@@ -599,7 +599,7 @@ l & \textit{otherwise}
 \begin{example}
   Here is an extended example of a
   derivation of one possible reduction for the process
-defined $A \stackrel{\textit{def}}{=} a . \mathbf{0} \mid (b . P + c.Q)$:
+defined $A \defn{} a . \mathbf{0} \mid (b . P + c.Q)$:
 %
 \begin{align*}
   \exampleLabel{}
