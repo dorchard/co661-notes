@@ -9,6 +9,10 @@
 \usepackage{pifont}
 \usepackage{mdframed}
 \usepackage{url}
+\usepackage{tocloft}
+\setlength\cftparskip{0pt}
+\setlength\cftbeforesecskip{3pt}
+\setlength\cftaftertoctitleskip{5pt}
 
 \def\mystrut{\rule{0pt}{0.68em}}
 \newcommand{\act}[1]{\textsf{#1}}
@@ -47,7 +51,7 @@
 
 \newcommand{\restr}[2]{\nu #2 . #1}
 
-\title{\vspace{-3.5em}CO661 - Theory and Practice of Concurrency \\
+\title{\vspace{-2em}CO661 - Theory and Practice of Concurrency \\
 {\Large{Notes on the Calculus of Communicating Systems (CCS)}}}
 
 \date{\vspace{-2em}Last updated on \today}
@@ -80,12 +84,13 @@ mistakes or errors or things that need clarifying, please fork and
 send a pull request.
 
 \tableofcontents
+\vspace{-1em}
 
 \section{Syntax}
 
 CCS processes comprise \emph{actions}, which we use to abstract
 the notion of a \emph{command} in a program or a particular function
-call or message. For example, the following CCS program describes a process
+call or a message. For example, the following CCS program describes a process
 that performs an (abstract) action $a$ followed by an (abstract)
 action $b$ and then does nothing:
 %
@@ -93,7 +98,7 @@ action $b$ and then does nothing:
   a . b . \mathbf{0}
 \end{equation*}
 %
-Actions sequenced via the operator ``.'' which is called the
+Actions are sequenced via the operator ``.'' which is called the
 \emph{prefixing operator} since it is used to prefix a process
 with an action. The process $\mathbf{0}$ is the inactive process.
 
@@ -120,6 +125,11 @@ we want to refer to some process in an abstract sense. We use
 $A$ to range over identifiers for processes (i.e., concrete names
 given to processes, see below on ``Process definitions'').
 
+We often use actions $a$ to model receiving a message ``$a$''
+(also called an \emph{input action})
+whilst its dual action $\overline{a}$ corresponds to sending the
+message ``$a$'' (an \emph{output action}).
+
 The following gives a few examples to give some intuition, but in the
 next section we will look at the concrete semantics of processes
 which will make precise what each part of the syntax means.
@@ -143,11 +153,12 @@ which will make precise what each part of the syntax means.
   where no $a$ action can be observed externally, because of the name
   restriction $\nu a $. The inner process $(a . P \mid \overline{a}
   . Q)$ can do a \emph{handshake} between the action $a$ and its dual
-  $\overline{a}$ which can happen together leaving a process $P \mid Q$.
+  $\overline{a}$ which can happen together leaving a process $P \mid
+  Q$. This notion of handshaking comes from the semantics (later).
 \end{itemize}
 %
 \paragraph{Concurrency Workbench}
-Note that the Concurrency Workbench tool (CAAL), which we use
+The Concurrency Workbench tool (CAAL), which we use
 in this course, has a slightly different
 concrete syntax, with the above constructs represented as follows (in order):
 %
@@ -159,7 +170,7 @@ P ::= \;\ \texttt{a} . P \;\,\mid\;\, \texttt{'a} .P \;\,\mid\;\, P \texttt{+} Q
 
 \paragraph{Process definitions}
 
-We will defined processes by recursive definitions. For example, the
+We will define processes by recursive definitions. For example, the
 following defines a process named $A$:
 %
 \begin{equation*}
@@ -193,7 +204,7 @@ made observable by this evaluation.  We define these small steps
 (called \emph{reductions} or \emph{transitions})
 by a relation between processes,\footnote{Viewed set theoretically,
   $\rightarrow$ is a ternary relation, i.e.
-  $(\rightarrow) \subset P \times l \times P$.}  annotated with a
+  $(\rightarrow) \subseteq P \times l \times P$.}  annotated with a
 label, of the form:
 %
 \begin{equation*}
@@ -244,7 +255,7 @@ e.g.
   %
   Each step here is a reduction that needs a \emph{derivation}. We
   will see below that we can derive reductions for more complex
-  processes by plugging together inference rules.
+  processes by ``plugging together'' inference rules in a derivation tree.
 \end{definition}
 
 \paragraph{Parallel composition}
@@ -265,30 +276,32 @@ to make some progress. The \trule{par2} provides the symmetric case.
 
 \begin{example}
 We can compose the \trule{action} and \trule{par1}
-rules to get the following derivation of a single reduction
+rules to get the following derivation of a $\underline{\text{single}}$ reduction
 step for the process $a . P \mid b . Q$:
 %
+\newcommand{\spacer}{\rule[-0.3em]{0em}{0.3em}\rule{0em}{0.3em}}
 \begin{align*}
   \exampleLabel{}
   \trule{par1}\dfrac{\trule{action}
-  \dfrac{}{a.P \xrightarrow{a} P}}{a.P \mid b.Q \xrightarrow{a} P \mid b.Q}
+  \dfrac{}{\spacer{}a.P \xrightarrow{a} P}}{(a.P \mid b.Q) \xrightarrow{a} (P \mid b.Q)}
 \end{align*}
 %
 Thus, we have reduced on the left-hand side of the parallel
 composition, emitting an $a$ action to get the resulting process $P
-\mid b . Q$. This process could then reduce by applying \trule{par2}:
+\mid b . Q$. This process could then reduce in a separate
+reduction by applying \trule{par2}:
 %
 \begin{align*}
   \exampleLabel{}
   \trule{par2}\dfrac{\trule{action}
-   \dfrac{}{b.Q \xrightarrow{b} Q}}{P \mid b.Q \xrightarrow{b} P \mid Q}
+   \dfrac{}{\spacer{}b.Q \xrightarrow{b} Q}}{(P \mid b.Q) \xrightarrow{b} (P \mid Q)}
 \end{align*}
 %
 These two reduction steps, once derived, can be put together to form
 the following trace:
 %
 \begin{equation*}
-a.P \mid b.Q \xrightarrow{a} P \mid b.Q \xrightarrow{b} P \mid Q
+(a.P \mid b.Q) \; \xrightarrow{a} \; (P \mid b.Q) \; \xrightarrow{b} \; (P \mid Q)
 \end{equation*}
 %
 This is not the only possible reduction sequence for
@@ -296,7 +309,7 @@ the process $(a.P \mid b.Q)$. Another possibility is that we could
 reduce on the right first, then on the left, giving the trace:
 %
 \begin{equation*}
-a.P \mid b.Q \xrightarrow{b} a.P \mid Q \xrightarrow{a} P \mid Q
+(a.P \mid b.Q) \; \xrightarrow{b} \; (a.P \mid Q) \; \xrightarrow{a} (P \mid Q)
 \end{equation*}
 %
 We can put these two traces together into a \emph{transition graph} that shows
@@ -326,15 +339,17 @@ In this case we have the processes $P$ and $Q$ making a reduction step
 \emph{at the same time} to become $P' \mid Q'$ if they reduce by dual
 actions $a$ and $\overline{a}$. We can use this to model notions of
 synchronisation, co-ordination, or communication between processes.
+The action $\tau$ is described as a ``silent'' action because an
+outside cannot observe which names were used in the handshake.
 
 \begin{example}
   Consider the following processes representing a vending machine
   $V$ and a customer $C$:
   %
   \begin{align*}
-V  & {\mathrel{\mathop{=}\limits^{{def}}}}
+V & \; \defn{} \;
      {\mathsf{coin}}.\overline{\mathsf{tea}}.V \\
-C & {\mathrel{\mathop{=}\limits^{{def}}}}
+C & \; \defn{} \;
 \overline{\mathsf{coin}}.{\mathsf{tea}}.C
   \end{align*}
   %
@@ -1025,7 +1040,7 @@ The lecture gives more examples and motivates this definition further.
 
   Let $P = a.(b.\mathbf{0}+c.\mathbf{0})$ and let $Q = a.b.\mathbf{0} + a.c.\mathbf{0}$.
   We must consider every transition that $P$ can make. In this case, $P$
-  can just do one transition 
+  can just do one transition
   $a.(b.\mathbf{0}+c.\mathbf{0}) \xrightarrow{a} (b.\mathbf{0} + c.\mathbf{0})$. Let $P' = b.\mathbf{0} + c.\mathbf{0}$.
 
   Now we need some transition $Q \xrightarrow{a} Q'$ such that
@@ -1046,14 +1061,14 @@ The lecture gives more examples and motivates this definition further.
     \begin{itemize}
       \item $(b.\mathbf{0} + c.\mathbf{0}) \xrightarrow{b}
       \mathbf{0}$.
-      
+
       Can $Q'$ do this transition? Yes. $Q' = b.\mathbf{0}
       \xrightarrow{b} \mathbf{0}$. And trivially $\mathbf{0} \sim
       \mathbf{0}$.
 
       \item $(b.\mathbf{0} + c.\mathbf{0}) \xrightarrow{c}
       \mathbf{0}$.
-      
+
       Can $Q'$ do this transition? No, since $Q'$ can only do a $b$
       transition.
     \end{itemize}
@@ -1072,11 +1087,11 @@ The lecture gives more examples and motivates this definition further.
     \begin{itemize}
       \item $(b.\mathbf{0} + c.\mathbf{0}) \xrightarrow{b}
       \mathbf{0}$.
-      
+
       Can $Q'$ do this transition? No since $Q' = c.\mathbf{0}$ it can
       only do a $c$ transition. So $P' \not\sim Q'$.
     \end{itemize}
-    
+
   \end{itemize}
   %
   Thus overall $P \not\sim Q$, i.e. $a.(b.\mathbf{0}+c.\mathbf{0}) \not\sim a.b.\mathbf{0} + a.c.\mathbf{0}$.
